@@ -1,0 +1,31 @@
+
+- block:
+  - name: "[sudo] [pacman] install sudo"
+    pacman:
+      name:  sudo
+      state: latest
+    when: ansible_distribution == ("Archlinux" or "Artix Linux")
+
+  - name: "[sudo] [portage] install sudo"
+    portage:
+      package:    app-admin/sudo
+      state:      present
+      update:     no              # yes quand le nfs sera automatiquement mis à jour
+      sync:       no              # yes = sync package repositories first         ## A QUOI CA SERT ?
+      # usepk:    yes             # quand nfs sera automatiquement mis à jour
+      usepkgonly: yes
+      quietbuild: yes
+    when: ansible_distribution == "Gentoo"
+
+  - name: "[sudo] [template] add users to sudoers file"
+    template:
+      src:      sudoers.j2
+      dest:     /etc/sudoers
+      mode:     0640
+      force:    yes
+      validate: "visudo -cf %s"
+
+  become: yes
+  become_user: "{{ user.0.name }}"
+  # become_user: "{{ user[inventory_hostname].0.name }}"
+  # become_user: "{{ (inventory_hostname == 'chroot') | ternary('root', user[inventory_hostname].0.name) }}"

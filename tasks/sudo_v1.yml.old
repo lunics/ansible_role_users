@@ -1,0 +1,145 @@
+
+- block:
+  - name: "[sudo] [pacman] install sudo"
+    pacman:
+      name:  sudo
+      state: latest
+
+  ## template
+  # v1
+  # - name: "[sudo] [blockinfile] add users to sudoers file"
+  #   # loop: "{{ user[inventory_hostname] }}"
+  #   # loop: "{{ (inventory_hostname == 'chroot') | ternary(user[host.bootstrap.hostname], user[inventory_hostname]) }}"
+  #   # loop_control:
+  #   #   loop_var: _user
+  #   # when: inventory_hostname != "chroot"            ## last change -> A DELETE si task OK
+  #   # vars:
+  #   #   _user: "{{ (inventory_hostname == 'chroot') | ternary(user[host.bootstrap.hostname], user[inventory_hostname]) }}"   # return: failed to validate variable
+  #   blockinfile:
+  #     path:     /etc/sudoers
+  #     mode:     0640
+  #     validate: "visudo -cf %s"
+  #     create:   yes
+  #     state:    present
+  #     marker:   "# {mark} ansible"
+  #     block: |
+  #       Defaults log_host, log_year, logfile="/var/log/sudo.log"
+  #       @includedir /etc/sudoers.d
+  #       root     ALL=(ALL) ALL
+  #       %wheel   ALL=(ALL) ALL
+  #       {{ (user[(inventory_hostname == "chroot") | ternary(host.bootstrap.hostname, inventory_hostname)].2.name == "aur") | ternary("aur      ALL=(ALL) NOPASSWD: /usr/bin/pacman", omit) }}
+      ## ne fonctionne pas si le user.2.name n'existe pas
+      # {{ (user[inventory_hostname].2.name == 'aur') | ternary("aur      ALL=(ALL) NOPASSWD: /usr/bin/pacman", omit) }}
+      # "{{ _user[inventory_hostname].1.name }}"
+      # {{ (_user[inventory_hostname].2.name == 'aur') | ternary("aur      ALL=(ALL) NOPASSWD /usr/bin/pacman", omit) }}
+      # {{ (user[inventory_hostname].2.name == 'aur') | ternary("aur      ALL=(ALL) NOPASSWD: /usr/bin/pacman", omit) }}
+      # {{ (_user.name == 'aur') | ternary(_user.name + "      ALL=(ALL) NOPASSWD: /usr/bin/pacman", omit) }}
+      # {{ item.name | default(omit) }}
+      # {{ user[inventory_hostname].1.name }}  ALL=(ALL) NOPASSWD: {{ nopasswd_commands | join(',') }}
+
+    # when: item.host == ansible_hostname
+    # loop:
+    #   - { host: "{{ host.1.name }}",
+    #       aur:  "{{ user[inventory_hostname].2.name }}      ALL=(ALL) NOPASSWD: /usr/bin/pacman"
+    #     }
+    #   - { host: "{{ host.2.name }}",
+    #       aur:  "{{ user[inventory_hostname].2.name }}      ALL=(ALL) NOPASSWD: /usr/bin/pacman"
+    #     }
+    #   - { host: "{{ host.3.name }}",
+    #       aur:  "{{ user[inventory_hostname].2.name }}      ALL=(ALL) NOPASSWD: /usr/bin/pacman"
+    #     }
+
+  # v2
+  - name: "[sudo] [template] add users to sudoers file"
+    template:
+      src:   sudoers.j2
+      dest:  /etc/sudoers
+      mode:  0640
+      force: yes
+      validate: "visudo -cf %s"
+
+  ## A DELETE
+  # - name: "[sudo] [blockinfile] add users to sudoers file on chroot"
+  #   when: inventory_hostname == "chroot"
+  #   blockinfile:
+  #     path:     /etc/sudoers
+  #     mode:     0640
+  #     validate: "visudo -cf %s"
+  #     create:   yes
+  #     state:    present
+  #     marker:   "# {mark} ansible"
+  #     block: |
+  #       Defaults log_host, log_year, logfile="/var/log/sudo.log"
+  #       @includedir /etc/sudoers.d
+  #       root     ALL=(ALL) ALL
+  #       %wheel   ALL=(ALL) ALL
+  #       {{ (user[bootstrap.target].2.name == 'aur') | ternary("aur      ALL=(ALL) NOPASSWD: /usr/bin/pacman", omit) }}
+
+## A DELETE si template ok
+  # - name: "[sudo] [replace] clean old lines sudoers"
+  #   replace:
+  #     path:     /etc/sudoers
+  #     before:   "# BEGIN ansible"
+  #     regexp:   "^(.+)$"
+  #     replace:  ""
+
+## A DELETE si template ok
+  # - name: "[sudo] [lineinfile] delete empty lines"
+  #   lineinfile:
+  #     path:   /etc/sudoers
+  #     regexp: "^ *$"
+  #     state:  absent
+
+  become: yes
+  become_user: "{{ user[inventory_hostname].0.name }}"
+  # become_user: "{{ (inventory_hostname == 'chroot') | ternary('root', user[inventory_hostname].0.name) }}"
+
+#- block:
+#  - name: "[sudo] [pacman] install sudo"
+#    pacman:
+#      name:  sudo
+#      state: latest
+
+#  - name: "[sudo] [blockinfile] add users to sudoers file"
+#    blockinfile:
+#      path:     /etc/sudoers
+#      mode:     0640
+#      validate: "visudo -cf %s"
+#      create:   yes
+#      state:    present
+#      marker:   "# {mark} ansible"
+#      block: |
+#        Defaults log_host, log_year, logfile="/var/log/sudo.log"
+#        @includedir /etc/sudoers.d
+#        root     ALL=(ALL) ALL
+#        %wheel   ALL=(ALL) ALL
+#        {{ item.aur | default(omit) }}
+#      #  {{ user[inventory_hostname].1.name }}  ALL=(ALL) NOPASSWD: {{ nopasswd_commands | join(',') }}
+#      #'
+#    when: item.host == ansible_hostname
+#    loop:
+#      - { host: "{{ host.1.name }}",
+#          aur:  "{{ user[inventory_hostname].2.name }}      ALL=(ALL) NOPASSWD: /usr/bin/pacman"
+#        }
+#      - { host: "{{ host.2.name }}",
+#          aur:  "{{ user[inventory_hostname].2.name }}      ALL=(ALL) NOPASSWD: /usr/bin/pacman"
+#        }
+#      - { host: "{{ host.3.name }}",
+#          aur:  "{{ user[inventory_hostname].2.name }}      ALL=(ALL) NOPASSWD: /usr/bin/pacman"
+#        }
+
+#  - name: "[sudo] [replace] clean old lines sudoers"
+#    replace:
+#      path:     /etc/sudoers
+#      before:   "# BEGIN ansible"
+#      regexp:   "^(.+)$"
+#      replace:  ""
+
+#  - name: "[sudo] [lineinfile] delete empty lines"
+#    lineinfile:
+#      path:   /etc/sudoers
+#      regexp: "^ *$"
+#      state:  absent
+
+#  become: yes
+#  become_user: "{{ user[inventory_hostname].0.name }}"

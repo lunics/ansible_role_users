@@ -1,0 +1,6 @@
+
+Defaults log_host, log_year, logfile="/var/log/sudo.log"
+@includedir /etc/sudoers.d
+root     ALL=(ALL) ALL
+%wheel   ALL=(ALL) ALL
+{{ "aur      ALL=(ALL) NOPASSWD: /usr/bin/pacman" if (user.2.name == "aur" and ansible_architecture != "aarch64") }}

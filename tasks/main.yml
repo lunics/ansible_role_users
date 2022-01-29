@@ -1,0 +1,197 @@
+
+# # on ne peut pas include_role: dns car le hostname ne sera pas update dans le context ansible de l'ancien hostname
+# - fail:
+#     msg: "hostname doesn't match to creates users correctly. Please run dns role"
+#   when: ansible_hostname != hostname
+
+## A INTEGRER AU RESTE DU PLAYBOOK
+# sam. 29 janv. 2022 11:12:48 CET
+# - name: "[set_fact] define target host"
+#   set_fact:
+#     _user: "{{ user[host.bootstrap.hostname] if inventory_hostname == 'chroot' else user[inventory_hostname] }}"
+
+## TESTER si le reboot permet de prendre en compte le nouveau hostname dans le module user
+# - include_role:
+#     name: dns
+#   register: _dns_role
+#   when: ansible_hostname != inventory_hostname and inventory_hostname != "chroot"
+
+# - name: "[reboot] current hostname: {{ ansible_hostname }}"
+#   reboot:
+#     msg: "reboot initiated by ansible"
+#     connect_timeout: 5                  # failed if ssh after 5s is not established
+#     reboot_timeout: 300                 # maximum seconds to wait before resume continue the playbook
+#     pre_reboot_delay: 0                 # seconds to wait before the reboot command
+#     post_reboot_delay: 0                # seconds to wait after the reboot command was successful
+#     test_command: uptime                # test a command return true to be sure system is up
+#   when: _dns_role is changed
+
+- name: "[pacman] install zsh"
+  pacman:
+    name: zsh
+  when: shell == "zsh" and ansible_distribution == ("Archlinux" or "Artix Linux")
+
+- name: "[portage] install zsh"
+  portage:
+    package:    app-shells/zsh
+    state:      present
+    update:     no              # yes quand le nfs sera automatiquement mis à jour
+    sync:       no              # yes = sync package repositories first         ## A QUOI CA SERT ?
+    # usepk:    yes             # quand nfs sera automatiquement mis à jour
+    usepkgonly: yes
+    quietbuild: yes
+  when: shell == "zsh" and ansible_distribution == "Gentoo"
+
+- block:
+  # vérifier s'il faut update le password
+  # sudo grep unics /etc/shadow
+  #   réutilisé le salt $6$<salt>
+  # openssl passwd -6 -salt eEs7RqwrorWuvquO
+
+  ## combiner les modules user
+  # - name: "[user] set {{ user[inventory_hostname].0.name }} password"
+  #   user:
+  #     name:     "{{ user[inventory_hostname].0.name }}"
+  #     password: "{{ user.0.password | password_hash('sha512') }}"
+  #     shell:    "/bin/{{ user.0.shell }}"
+  #     update_password: always         # pas possible d'éviter l'état changed si on veut update le password via le module user
+  #   register: root_passwd
+  #   changed_when: False
+
+  # - debug:
+  #     msg: "{{ user[inventory_hostname].0.name }} password update failed"
+  #   when: root_passwd is failed
+
+  - name: "[user] setup users"
+    # old loop: "{{ _user }}"
+    loop: "{{ user }}"
+    user:
+      name:         "{{ item.name }}"
+      password:     "{{ item.passwd | password_hash('sha512') }}"
+      group:        "{{ item.group }}"
+      groups:       []   # "{{ user.groups | join(',') }}"
+      uid:          "{{ '0' if item.name == 'root' else item.uid }}"
+      shell:        "/bin/{{ item.shell }}"
+      create_home:  yes
+      append:       no
+      skeleton:     false
+      non_unique:   no
+      update_password: always
+    # when: item.host == ansible_hostname
+    # loop: "{{ users[when chroot = target else ansible_hostname].user }}"
+
+      # - { host:  "{{ host.2.name }}",        # root on desktop
+      #     name:  "{{ user[inventory_hostname].0.name }}",
+      #     pass:  "{{ user.0.password }}",
+      #     shell: "{{ user.0.shell }}"
+      #   }
+      # - { host:  "{{ host.2.name }}",        # dunics on desktop
+      #     name:  "{{ user[inventory_hostname].1.name }}",
+      #     pass:  "{{ user.1.password }}",
+      #     group: "{{ user.1.group }}",
+      #     uid:   "{{ user.1.uid }}",
+      #     shell: "{{ user.1.shell }}"
+      #   }
+      # - { host:  "{{ host.2.name }}",        # aur on desktop
+      #     name:  "{{ user[inventory_hostname].2.name }}",
+      #     pass:  "{{ user.2.password }}",
+      #     group: "{{ user.2.group }}",
+      #     uid:   "{{ user.2.uid }}",
+      #     shell: "{{ user.2.shell }}"
+      #   }
+      # - { host:  "{{ host.1.name }}",        # root on raspberry
+      #     name:  "{{ user[inventory_hostname].0.name }}",
+      #     pass:  "{{ user.0.password }}",
+      #     shell: "{{ user.0.shell }}"
+      #   }
+      # - { host:  "{{ host.1.name }}",        # runics on raspberry
+      #     name:  "{{ user[inventory_hostname].1.name }}",
+      #     pass:  "{{ user.1.password }}",
+      #     group: "{{ user.1.group }}",
+      #     uid:   "{{ user.1.uid }}",
+      #     shell: "{{ user.1.shell }}"
+      #   }
+      # - { host:  "{{ host.1.name }}",        # aur on raspberry
+      #     name:  "{{ user[inventory_hostname].2.name }}",
+      #     pass:  "{{ user.2.password }}",
+      #     group: "{{ user.2.group }}",
+      #     uid:   "{{ user.2.uid }}",
+      #     shell: "{{ user.2.shell }}"
+      #   }
+      # - { host:  "{{ host.3.name }}",        # lunics on desktop
+      #     name:  "{{ user[inventory_hostname].1.name }}",
+      #     pass:  "{{ user.1.password }}",
+      #     group: "{{ user.1.group }}",
+      #     uid:   "{{ user.1.uid }}",
+      #     shell: "{{ user.1.shell }}"
+      #   }
+
+  # - name: "[file] create ansible cache directory for users"
+  #   file:
+  #     state: directory
+  #     # path:  "{{ (item.user == 'root') | ternary(omit, '/home') }}/{{ item.user }}/{{ item.dir }}"
+  #     path:  "{{ item.user }}"
+  #     owner: "{{ item.user }}"
+  #     group: "{{ item.group }}"
+  #     mode:  "0700"
+  #   with_items:
+  #     ## le /root/.cache/ansible génère un __omit directory vu qu'ansible en a besoin
+  #     # - { user: "{{ user[inventory_hostname].0.name }}", dir: .cache }
+  #     # - { user: "{{ user[inventory_hostname].0.name }}", dir: .cache/ansible }
+  #     - { user: "{{ user[inventory_hostname].1.name }}", dir: .cache }
+  #     - { user: "{{ user[inventory_hostname].1.name }}", dir: .cache/ansible }
+  #     - { user: "{{ user[inventory_hostname].2.name }}", dir: .cache }
+  #     - { user: "{{ user[inventory_hostname].2.name }}", dir: .cache/ansible }
+
+  ## A TESTER avec 2 path
+  ## A DECOUPER en 2 tasks
+  # - name: "[file] create ansible cache directory for {{ user[inventory_hostname].1.name }} and {{ user[inventory_hostname].2.name }} and .local/share/gnupg for {{ user[inventory_hostname].1.name }}"
+  #   file:
+  #     state: directory
+  #     path:
+  #       - "{{ (item.user == 'root') | ternary(omit, '/home') }}/{{ item.user }}/.cache/ansible"
+  #       # - "{{ (item.user == user[inventory_hostname].1.name) | ternary('/home/' + user[inventory_hostname].1.name + '/.local/share/gnupg', omit) }}"
+  #     owner: "{{ item.user }}"
+  #     group: "{{ item.group }}"
+  #     mode:  "0700"
+  #   loop:
+  #     - { user: "{{ user[inventory_hostname].1.name }}", group: "{{ user.1.group }}" }
+  #     - { user: "{{ user[inventory_hostname].2.name }}", group: "{{ user.2.group }}" }
+  #     ## le /root/.cache/ansible génère un __omit directory vu qu'ansible en a besoin
+  #     # - { user: "{{ user[inventory_hostname].0.name }}", dir: .cache }
+  #     # - { user: "{{ user[inventory_hostname].0.name }}", dir: .cache/ansible }
+
+  ## A RESTESTER, cache + gnupg combined
+  - name: "[file] create ansible cache directory"
+    # loop: "{{ _user }}"
+    loop: "{{ user }}"
+    # loop_control:
+    #   index_var: _index
+    # when: _index == 1 or (_index == 2 and item.name == "aur")
+    file:
+      state: directory
+      # path:  "{{ '/root/.ansible' if item.name == 'root' else ('/home/' + item.name + '/.cache/ansible') }}"
+      path:
+        - "{{ '/root/.ansible' if item.name == 'root' else ('/home/' + item.name + '/.cache/ansible') }}"
+        - "{{ '/root/.gnupg'   if item.name == 'root' else ('/home/' + item.name + '/.local/share/gnupg') }}"
+      owner: "{{ item.name }}"
+      group: "{{ item.group }}"
+      mode:  0700
+
+  # - name: "[file] create ~/.local/share/gnupg directory"
+  #   loop: "{{ _user }}"
+  #   # loop_control:
+  #   #   index_var: _index
+  #   # when: (inventory_hostname == ("laptop" or "desktop") or host.bootstrap.hostname == "laptop", "desktop") and _index == 1
+  #   file:
+  #     state: directory
+  #     path:  "{{ '/root/.gnupg' if item.name == 'root' else ('/home/' + item.name + '/.local/share/gnupg') }}"
+  #     owner: "{{ _user.name }}"
+  #     group: "{{ _user.group }}"
+  #     mode:  0700
+
+  become: yes
+  become_user: "{{ user.0.name }}"
+  # become_user: "{{ (inventory_hostname == 'chroot') | ternary('root', user[inventory_hostname].0.name) }}"
+
+- include: sudo.yml
