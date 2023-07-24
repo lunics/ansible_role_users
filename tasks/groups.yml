@@ -1,0 +1,15 @@
+- block:
+  - name: groups | group > create entities from the group list
+    group:
+      name:   "{{ item.name   }}"
+      gid:    "{{ item.gid    | default(omit) }}"
+      system: "{{ item.system | default(omit) }}"
+      state:  "{{ item.state  | default('present') }}"
+    loop: "{{ group }}"
+
+  - name: groups | group > create user group
+    group:
+      name: "{{ item.group if item.group is defined else item.name }}"
+    loop: "{{ user }}"
+
+  tags: groups

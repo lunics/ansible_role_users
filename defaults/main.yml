@@ -1,0 +1,33 @@
+user: []
+  # - name:   root
+  #   group:  root
+  #   passwd: "{{ vault.user.root.passwd }}"
+  #   shell:  bash
+  # - name:   toto
+  #   uid:    1000
+  #   group:  wheel
+  #   groups:
+  #     - video
+  #     - kvm
+  #     - libvirt
+  #   passwd: "{{ vault.user.toto.passwd }}"
+  #   shell:  zsh
+  #   system: false
+
+group: []
+  # - name:    bar
+  #   gid:     4000
+  #   state:   present
+  #   system:  false
+
+user_dirs: []
+  # - owner: foo
+  #   list:
+  #     - downloads
+  #     - .config
+  #     - .config/systemd/user
+  #     - .cache
+  #     - .cache/logs
+  #     - .cache/ansible
+
+user_shell: bash      # default shell: bash, zsh, ..., false

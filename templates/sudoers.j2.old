@@ -1,9 +1,0 @@
-
-Defaults log_host, log_year, logfile="/var/log/sudo.log"
-@includedir /etc/sudoers.d
-root     ALL=(ALL) ALL
-%wheel   ALL=(ALL) ALL
-{% if ansible_architecture != "aarch64" %}
-{{ (user.2.name == "aur") | ternary("aur      ALL=(ALL) NOPASSWD: /usr/bin/pacman", omit) }}
-{% endif %}
-
