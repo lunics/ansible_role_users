@@ -7,7 +7,7 @@ Can manage clear user password = always changed, or hash password = success if n
 Only tested on Archlinux.
 
 ## Usage
-Override [defaults](https://github.com/lunics/ansible_role_users/tree/main/defaults/main)
+Override [defaults](https://github.com/lunics/ansible_role_users/blob/master/defaults/main.yml)
 ```yaml
 user:
   - name:   foo             # required
@@ -42,4 +42,5 @@ user_dirs:                  # optional
       - .cache/ansible
 ```
 TODO
+- user dirs not tested again
 - replace user_dirs.list by user_dirs.path
