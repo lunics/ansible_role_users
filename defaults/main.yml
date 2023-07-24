@@ -3,14 +3,14 @@ user: []
   #   group:  root
   #   passwd: "{{ vault.user.root.passwd }}"
   #   shell:  bash
-  # - name:   toto
+  # - name:   foo
   #   uid:    1000
   #   group:  wheel
   #   groups:
   #     - video
   #     - kvm
   #     - libvirt
-  #   passwd: "{{ vault.user.toto.passwd }}"
+  #   passwd: "{{ vault.user.foo.passwd }}"
   #   shell:  zsh
   #   system: false
 
