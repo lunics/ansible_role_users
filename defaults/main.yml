@@ -13,6 +13,9 @@ user: []
   #   passwd: "{{ vault.user.foo.passwd }}"
   #   shell:  zsh
   #   system: false
+  # - name:   bar
+  #   uid:    1002
+  #   shell:  false     # optional, default=/bin/false
 
 group: []
   # - name:    bar

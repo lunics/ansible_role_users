@@ -18,9 +18,9 @@ user:
       - kvm
       - libvirt
     passwd: "{{ vault.user.foo.hash }}"
-    shell:  zsh             # optional, default = bash
+    shell:  zsh             # optional, default = /bin/false
     system: false           # optional, default = false
-    create_home:            # optional, default = true
+    create_home: true       # optional, default = true
     state:  present         # optional, default = present
 ```
 ```yaml

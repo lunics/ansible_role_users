@@ -28,7 +28,8 @@
       # append:          "{{ i_user.append if (i_user.append is defined and t_groups is defined) else omit }}"
       append:          "{{ i_user.append     | default(false)       }}"    ## test if true works when there is no groups
       uid:             "{{ '0' if i_user.name == 'root' else i_user.uid  }}"
-      shell:           "/bin/{{ 'false' if (i_user.shell is defined and not i_user.shell) else (i_user.shell | default(user_shell)) }}"  # /bin/false if user.shell: false else /bin/user.shell
+      # shell:           "/bin/{{ 'false' if (i_user.shell is defined and not i_user.shell) else (i_user.shell | default(user_shell)) }}"  # /bin/false if user.shell: false else /bin/user.shell
+      shell:           "/bin/{{ i_user.shell | default('false') }}"
       update_password: "{{ i_user.update_passwd | default('always') }}"
       create_home:     "{{ i_user.home       | default(true)      }}"
       skeleton:        "{{ i_user.skeleton   | default(false)     }}"
