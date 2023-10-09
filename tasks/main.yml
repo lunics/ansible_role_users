@@ -3,11 +3,9 @@
 
   - import_tasks: groups.yml
 
-  - include_tasks: user_accounts.yml
+  - include_tasks: users.yml
     loop: "{{ user }}"
     loop_control:
       loop_var: i_user
-
-  - import_tasks: user_dirs.yml
 
   tags: users
