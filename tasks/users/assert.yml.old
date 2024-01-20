@@ -1,25 +1,4 @@
 - block:
-  - name: assert > system gid between 100 to 499
-    assert:
-      that:
-        - item.gid >= 100
-        - item.gid <= 499
-    when:
-      - item.gid    is defined
-      - item.system is defined
-      - item.system is true
-    loop: "{{ group }}"
-
-  - name: assert > non system gid between 1000 to 60000
-    assert:
-      that:
-        - item.gid >= 1000
-        - item.gid <= 60000
-    when:
-      - item.gid is defined
-      - (item.system is not defined) or (not item.system)
-    loop: "{{ group }}"
-
   - name: assert > system uid between 100 to 499
     assert:
       that:

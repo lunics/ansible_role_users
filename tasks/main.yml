@@ -1,11 +1,15 @@
 - block:
-  - import_tasks: assert.yml
+  - import_tasks: groups/assert.yml
+  - import_tasks: groups/group.yml
 
-  - import_tasks: groups.yml
+  - name: include_tasks > loop over host_vars users/*.yml files
+    include_tasks: users/loop.yml
+    with_fileglob:
+      - "{{ inventory_dir }}/host_vars/{{ ansible_hostname }}/users/*.yml"
 
-  - include_tasks: users.yml
-    loop: "{{ user }}"
-    loop_control:
-      loop_var: i_user
+  # - include_tasks: users.yml
+  #   loop: "{{ user }}"
+  #   loop_control:
+  #     loop_var: i_user
 
   tags: users

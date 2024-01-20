@@ -1,0 +1,11 @@
+- block:
+  - name: include_vars > user variable
+    include_vars:
+      file: "{{ item }}"
+      name: "loop"
+
+  - import_tasks: assert.yml
+
+  - import_tasks: user.yml
+
+  tags: users, user_accounts

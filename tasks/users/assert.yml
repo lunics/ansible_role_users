@@ -1,0 +1,21 @@
+- block:
+  - name: ({{ loop.user.name }}) assert > system uid between 100 to 499
+    assert:
+      that:
+        - loop.user.uid >= 100
+        - loop.user.uid <= 499
+    when:
+      - loop.user.uid    is defined
+      - loop.user.system is defined
+      - loop.user.system is true
+
+  - name: ({{ loop.user.name }}) assert > non system uid between 1000 to 60000
+    assert:
+      that:
+        - loop.user.uid >= 1000
+        - loop.user.uid <= 60000
+    when:
+      - loop.user.uid is defined
+      - (loop.user.system is not defined) or (not item.system)
+
+  tags: users_assert

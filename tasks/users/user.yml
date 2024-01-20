@@ -1,0 +1,47 @@
+- block:
+  - name: create_vm | set_fact > combine libvirt_vm with default values
+    set_fact:
+      f_user: "{{ user_default | combine(loop.user, recursive=true) }}"
+
+  - name: ({{ f_user.name }}) package > install {{ f_user.shell }}
+    package:
+      name: "{{ f_user.shell }}"
+    when: f_user.shell not in ["nologin","false"]
+
+  # - block:
+  - name: ({{ f_user.name }}) set_fact > get latest user password to update current become sudo passwd
+    set_fact:
+      t_password: "{{ f_user.passwd if vault.user[f_user.name].wanted is not defined
+                      else vault.user[f_user.name].wanted }}"
+
+  - name: ({{ f_user.name }}) set_fact > get hash password
+    set_fact:
+      t_hash_passwd: "{{ t_password if (t_password | regex_search('^\\$6'))
+                         else t_password | password_hash('sha512') }}"
+
+    # when: f_user.passwd is defined # or (f_user.passwd | length)
+
+  - name: ({{ f_user.name }}) set_fact > join groups name
+    set_fact:
+      t_groups: "{{ f_user.groups | join(',') }}"
+    when: f_user.groups is defined
+
+  - name: ({{ f_user.name }}) user > setup users
+    user:
+      name:            "{{ f_user.name     }}"
+      password:        "{{ t_hash_passwd   }}"
+      group:           "{{ f_user.group    | default(f_user.name) }}"
+      groups:          "{{ t_groups        | default(omit) }}"
+      # append:          "{{ f_user.append if (f_user.append is defined and t_groups is defined) else omit }}"
+      append:          "{{ f_user.append   }}"    ## test if true works when there is no groups
+      uid:             "{{ '0' if f_user.name == 'root' else f_user.uid  }}"
+      shell:           "/bin/{{ f_user.shell }}"
+      update_password: "{{ f_user.update_passwd }}"
+      create_home:     "{{ f_user.create_home   }}"
+      skeleton:        "{{ f_user.skeleton      }}"
+      non_unique:      "{{ f_user.non_unique    }}"
+      system:          "{{ f_user.system        }}"
+      expires:         "{{ f_user.expires       | default(omit) }}"
+      state:           "{{ f_user.state         }}"
+
+  tags: users, user_accounts

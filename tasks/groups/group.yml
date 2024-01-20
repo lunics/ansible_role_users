@@ -7,9 +7,10 @@
       state:  "{{ item.state  | default('present') }}"
     loop: "{{ group }}"
 
-  - name: groups | group > create user group
-    group:
-      name: "{{ item.group if item.group is defined else item.name }}"
-    loop: "{{ user }}"
+  ## TODO
+  # - name: groups | group > create user group
+  #   group:
+  #     name: "{{ item.group if item.group is defined else item.name }}"
+  #   loop: "{{ user }}"
 
   tags: groups
