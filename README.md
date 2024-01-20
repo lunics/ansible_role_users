@@ -7,16 +7,28 @@ Can manage clear user password = always changed, or hash password = success if n
 Only tested on Archlinux.
 
 ## Usage
-Override [defaults](https://github.com/lunics/ansible_role_users/blob/master/defaults/main.yml)
+Create a directory in your host_vars/<hostname>/users/*.yml.
+Or change the path of users_inventory_path.
+Where each file in users_inventory_path is a user profile, see example below.
+
+Override [defaults](https://github.com/lunics/ansible_role_users/blob/master/defaults/main.yml).
+
 ```yaml
+# in file foo.yml
 user:
-  - name:   foo             # required
+  - name:   foo
+    uid:    1002
+    group:  wheel
+    passwd: "{{ vault.user.foo.hash }}"
+    shell:  zsh
+
+# in file bar.yml
+user:
+  - name:   bar             # required
     uid:    1000            # required
     group:  wheel           # optional, default = user.name (=foo)
     groups:                 # optional
       - video
-      - kvm
-      - libvirt
     passwd: "{{ vault.user.foo.hash }}"
     shell:  zsh             # optional, default = /bin/false
     system: false           # optional, default = false

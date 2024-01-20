@@ -4,8 +4,8 @@
 
   - name: include_tasks > loop over host_vars users/*.yml files
     include_tasks: users/loop.yml
-    with_fileglob:
-      - "{{ inventory_dir }}/host_vars/{{ ansible_hostname }}/users/*.yml"
+    # with_fileglob: "{{ inventory_dir }}/host_vars/{{ ansible_hostname }}/users/*.yml"
+    with_fileglob: "{{ users_inventory_path }}"
 
   # - include_tasks: users.yml
   #   loop: "{{ user }}"
