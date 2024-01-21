@@ -4,18 +4,20 @@
       name: "{{ _user.shell }}"
     when: _user.shell not in ["nologin","false"]
 
-  # - block:
-  - name: ({{ _user.name }}) set_fact > get latest user password to update current become sudo passwd
-    set_fact:
-      t_password: "{{ _user.passwd if vault.user[_user.name].wanted is not defined
-                      else vault.user[_user.name].wanted }}"
+  - block:
+    - name: ({{ _user.name }}) set_fact > get latest user password to update current become sudo passwd
+      set_fact:
+        t_password: "{{ _user.passwd if vault.user[_user.name].wanted is not defined
+                        else vault.user[_user.name].wanted }}"
 
-  - name: ({{ _user.name }}) set_fact > get hash password
-    set_fact:
-      t_hash_passwd: "{{ t_password if (t_password | regex_search('^\\$6'))
-                         else t_password | password_hash('sha512') }}"
+    - name: ({{ _user.name }}) set_fact > get hash password
+      set_fact:
+        t_hash_passwd: "{{ t_password if (t_password | regex_search('^\\$6'))
+                           else t_password | password_hash('sha512') }}"
 
-    # when: _user.passwd is defined # or (_user.passwd | length)
+    when:
+      - _user.passwd is defined
+      - _user.passwd | length
 
   - name: ({{ _user.name }}) set_fact > join groups name
     set_fact:
@@ -25,14 +27,14 @@
   - name: ({{ _user.name }}) user > setup users
     user:
       name:            "{{ _user.name     }}"
-      password:        "{{ t_hash_passwd   }}"
+      password:        "{{ t_hash_passwd  | default(omit) }}"
       group:           "{{ _user.group    | default(_user.name) }}"
       groups:          "{{ t_groups        | default(omit) }}"
       # append:          "{{ _user.append if (_user.append is defined and t_groups is defined) else omit }}"
       append:          "{{ _user.append   }}"    ## test if true works when there is no groups
       uid:             "{{ '0' if _user.name == 'root' else _user.uid  }}"
       shell:           "/bin/{{ _user.shell }}"
-      update_password: "{{ _user.update_passwd }}"
+      update_password: "{{ 'always' if _user.passwd is defined else omit }}"    # _user.update_passwd
       create_home:     "{{ _user.create_home   }}"
       skeleton:        "{{ _user.skeleton      }}"
       non_unique:      "{{ _user.non_unique    }}"

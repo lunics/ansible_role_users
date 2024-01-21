@@ -1,7 +1,7 @@
 user_default:
   append:        false
   shell:         nologin
-  update_passwd: always
+  # update_passwd: always
   create_home:   true
   skeleton:      false
   non_unique:    false
