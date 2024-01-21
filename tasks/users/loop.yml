@@ -1,8 +1,12 @@
 - block:
-  - name: include_vars > user variable
+  - name: include_vars > user files
     include_vars:
       file: "{{ item }}"
-      name: "loop"
+      name: "include"
+
+  - name: set_fact > _user var
+    set_fact:
+      _user: "{{ user_default | combine(include.user, recursive=true) }}"
 
   - import_tasks: assert.yml
 
